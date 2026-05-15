@@ -1,0 +1,125 @@
+spring:
+  application:
+    name: techlearner
+
+  # ─────────────────────────────────────────────
+  # PostgreSQL + HikariCP (JDBC Connection Pool)
+  # TOPIC: JDBC + Connection Pool, DB Transactions & Isolation
+  # ─────────────────────────────────────────────
+  datasource:
+    url: jdbc:postgresql://localhost:5432/techlearner_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: TechLearnerHikariPool
+      maximum-pool-size: 10          # Max connections in pool
+      minimum-idle: 2                # Min idle connections
+      idle-timeout: 30000            # Remove idle conn after 30s
+      connection-timeout: 20000      # Wait max 20s for connection
+      max-lifetime: 1800000          # Conn lives max 30 min
+      leak-detection-threshold: 60000 # Warn if conn held > 60s
+
+  # ─────────────────────────────────────────────
+  # JPA + Hibernate
+  # TOPIC: Hibernate Session & ORM
+  # ─────────────────────────────────────────────
+  jpa:
+    hibernate:
+      ddl-auto: create-drop          # Creates schema on start, drops on stop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_batch_fetch_size: 10  # Fixes N+1 Problem (batch loading)
+        jdbc:
+          batch_size: 25              # Batch INSERT/UPDATE
+        generate_statistics: true     # Shows Hibernate stats in logs
+    open-in-view: false               # Disable OSIV - important for perf!
+
+  # ─────────────────────────────────────────────
+  # Redis Cache
+  # TOPIC: Caching (Redis)
+  # ─────────────────────────────────────────────
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 60000            # Cache TTL: 60 seconds
+      cache-null-values: false
+
+  # ─────────────────────────────────────────────
+  # Kafka
+  # TOPIC: Message Queues (Kafka)
+  # ─────────────────────────────────────────────
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all                       # Wait for all replicas to ack
+      retries: 3
+    consumer:
+      group-id: techlearner-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      auto-offset-reset: earliest
+      properties:
+        spring.json.trusted.packages: "com.techlearner.*"
+
+# ─────────────────────────────────────────────
+# JWT Security
+# TOPIC: Spring Security + JWT
+# ─────────────────────────────────────────────
+app:
+  jwt:
+    secret: "TechLearnerSuperSecretKeyForJWTSigningMustBe256BitsLong!"
+    expiration: 86400000             # 24 hours in ms
+
+# ─────────────────────────────────────────────
+# Async Thread Pool
+# TOPIC: Async Processing, Thread Pool
+# ─────────────────────────────────────────────
+  async:
+    core-pool-size: 4
+    max-pool-size: 10
+    queue-capacity: 100
+
+# ─────────────────────────────────────────────
+# Rate Limiting
+# TOPIC: Rate Limiting
+# ─────────────────────────────────────────────
+  rate-limit:
+    requests-per-minute: 60
+
+# Actuator endpoints (for monitoring)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,caches,threaddump,heapdump
+  endpoint:
+    health:
+      show-details: always
+
+# Logging
+logging:
+  level:
+    com.techlearner: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.stat: DEBUG
+    com.zaxxer.hikari: INFO
+  pattern:
+    console: "%d{HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

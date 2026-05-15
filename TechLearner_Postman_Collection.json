@@ -1,0 +1,1029 @@
+{
+  "info": {
+    "name": "TechLearner - Complete API Collection",
+    "description": "30+ Backend Topics Cover karta hai - JWT Auth, Caching, N+1, Pagination, JVM, Rate Limiting, Kafka",
+    "_postman_id": "techlearner-collection-v1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 1. Auth - Spring Security + JWT",
+      "description": "TOPIC: Spring Security + JWT Flow",
+      "item": [
+        {
+          "name": "1.1 Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.token) {",
+                  "    pm.collectionVariables.set('token', res.token);",
+                  "    console.log('✅ Token saved:', res.token.substring(0,30) + '...');",
+                  "}",
+                  "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Token received', () => pm.expect(res.token).to.be.a('string'));",
+                  "pm.test('Username matches', () => pm.expect(res.username).to.eql('testuser'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"test@techlearner.com\",\n  \"password\": \"test1234\"\n}"
+            }
+          }
+        },
+        {
+          "name": "1.2 Login as User (Auto-saves Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.token) {",
+                  "    pm.collectionVariables.set('token', res.token);",
+                  "    console.log('✅ User token saved!');",
+                  "}",
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Token present', () => pm.expect(res.token).to.be.a('string'));",
+                  "pm.test('Role is USER', () => pm.expect(res.role).to.eql('USER'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"rahul@test.com\",\n  \"password\": \"rahul123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "1.3 Login as ADMIN (Auto-saves Admin Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var res = pm.response.json();",
+                  "if (res.token) {",
+                  "    pm.collectionVariables.set('adminToken', res.token);",
+                  "    pm.collectionVariables.set('token', res.token);",
+                  "    console.log('✅ Admin token saved!');",
+                  "}",
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Role is ADMIN', () => pm.expect(res.role).to.eql('ADMIN'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@techlearner.com\",\n  \"password\": \"admin123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "1.4 Login - Wrong Password (401 Test)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 Unauthorized', () => pm.response.to.have.status(401));",
+                  "pm.test('Error message present', () => {",
+                  "    var res = pm.response.json();",
+                  "    pm.expect(res.message).to.include('Invalid');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"rahul@test.com\",\n  \"password\": \"wrongpassword\"\n}"
+            }
+          }
+        },
+        {
+          "name": "1.5 Access Protected Route Without Token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 or 403 - No Auth', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/products"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📦 2. Products - Cache + Pagination + Streams",
+      "description": "TOPIC: Caching(Redis), Pagination, Java Streams, @Transactional",
+      "item": [
+        {
+          "name": "2.1 Get All Products (Offset Pagination) - 1st call = DB",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var res = pm.response.json();",
+                  "pm.test('Has pagination fields', () => {",
+                  "    pm.expect(res).to.have.property('content');",
+                  "    pm.expect(res).to.have.property('totalElements');",
+                  "    pm.expect(res).to.have.property('totalPages');",
+                  "    pm.expect(res).to.have.property('last');",
+                  "});",
+                  "pm.test('Content is array', () => pm.expect(res.content).to.be.an('array'));",
+                  "if (res.content.length > 0) {",
+                  "    pm.collectionVariables.set('productId', res.content[0].id);",
+                  "    console.log('📦 Saved productId:', res.content[0].id);",
+                  "}",
+                  "console.log('📊 Total products:', res.totalElements, '| Pages:', res.totalPages);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?page=0&size=5&sortBy=price",
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "5" },
+                { "key": "sortBy", "value": "price" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "2.2 Get Products AGAIN - 2nd call = REDIS CACHE HIT ⚡",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": ["console.log('🔍 Watch app logs - this should NOT show DB query (cache hit!)');"]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 (served from cache)', () => pm.response.to.have.status(200));",
+                  "console.log('⚡ If no SQL in app logs = CACHE HIT! Redis served this response.');",
+                  "console.log('💡 TOPIC: Cache-Aside Pattern - @Cacheable in ProductService');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?page=0&size=5&sortBy=price",
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "5" },
+                { "key": "sortBy", "value": "price" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "2.3 Get Page 2 (Different page = different cache key)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var res = pm.response.json();",
+                  "console.log('📄 Page 2 content count:', res.content.length);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?page=1&size=5&sortBy=price",
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "size", "value": "5" },
+                { "key": "sortBy", "value": "price" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "2.4 Get Single Product by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var res = pm.response.json();",
+                  "pm.test('Has required fields', () => {",
+                  "    pm.expect(res).to.have.property('id');",
+                  "    pm.expect(res).to.have.property('name');",
+                  "    pm.expect(res).to.have.property('price');",
+                  "    pm.expect(res).to.have.property('category');",
+                  "});",
+                  "console.log('📦 Product:', res.name, '| Price:', res.price);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/products/{{productId}}"
+          }
+        },
+        {
+          "name": "2.5 Create Product (ADMIN only) - Triggers Kafka Event",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+                  "var res = pm.response.json();",
+                  "if (res.id) pm.collectionVariables.set('newProductId', res.id);",
+                  "pm.test('Product created', () => pm.expect(res.name).to.eql('iPhone 16 Pro'));",
+                  "console.log('✅ Product created! Check app logs for:');",
+                  "console.log('  1. INSERT SQL query');",
+                  "console.log('  2. Kafka publish log: Published ProductCreated');",
+                  "console.log('  3. Cache evicted (CacheEvict)');",
+                  "console.log('  4. Kafka consumer log: Received ProductCreated');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/products",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"iPhone 16 Pro\",\n  \"description\": \"Latest Apple smartphone with titanium design\",\n  \"price\": 134900,\n  \"category\": \"ELECTRONICS\",\n  \"stock\": 25\n}"
+            }
+          }
+        },
+        {
+          "name": "2.6 Create Product as USER (403 Forbidden - PreAuthorize Test)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403 Forbidden (USER cannot create)', () => pm.response.to.have.status(403));",
+                  "console.log('🔒 TOPIC: @PreAuthorize(\"hasRole(ADMIN)\") blocked this request');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/products",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Hacked Product\",\n  \"price\": 1,\n  \"category\": \"TEST\",\n  \"stock\": 999\n}"
+            }
+          }
+        },
+        {
+          "name": "2.7 Update Product (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "console.log('💾 TOPIC: @CachePut - cache updated with new value');",
+                  "console.log('💡 Hibernate dirty checking: only changed fields UPDATE honge');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/products/{{newProductId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"iPhone 16 Pro Max\",\n  \"description\": \"Updated: 6.7 inch display, titanium\",\n  \"price\": 149900,\n  \"category\": \"ELECTRONICS\",\n  \"stock\": 20\n}"
+            }
+          }
+        },
+        {
+          "name": "2.8 Cursor-Based Pagination (Keyset) - Faster than OFFSET ⚡",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var res = pm.response.json();",
+                  "pm.test('Returns array', () => pm.expect(res).to.be.an('array'));",
+                  "console.log('⚡ TOPIC: Cursor/Keyset Pagination');",
+                  "console.log('SQL: SELECT * FROM products WHERE id > :lastId LIMIT :size');",
+                  "console.log('vs OFFSET: SELECT * FROM products LIMIT 5 OFFSET 10000 (SLOW!)');",
+                  "if (res.length > 0) {",
+                  "    var lastId = res[res.length-1].id;",
+                  "    console.log('Next cursor (lastId):', lastId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/cursor?lastId=0&size=5",
+              "query": [
+                { "key": "lastId", "value": "0" },
+                { "key": "size", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "2.9 Filter by Category (Java Streams Demo)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var res = pm.response.json();",
+                  "pm.test('All products are ELECTRONICS', () => {",
+                  "    res.forEach(p => pm.expect(p.category).to.eql('ELECTRONICS'));",
+                  "});",
+                  "console.log('🌊 TOPIC: Java Streams Pipeline');",
+                  "console.log('.filter() → .filter() → .sorted() → .map() → .collect()');",
+                  "console.log('Lazy evaluation: nothing executes until collect()!');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/products/category/ELECTRONICS"
+          }
+        },
+        {
+          "name": "2.10 Validation Error Test (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 Validation Error', () => pm.response.to.have.status(400));",
+                  "var res = pm.response.json();",
+                  "pm.test('Has fieldErrors', () => pm.expect(res).to.have.property('fieldErrors'));",
+                  "console.log('Validation errors:', JSON.stringify(res.fieldErrors, null, 2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/products",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"price\": -100,\n  \"stock\": -5\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🛒 3. Orders - N+1 Problem Demo",
+      "description": "TOPIC: N+1 Problem Deep Dive, @Transactional Isolation, Pagination",
+      "item": [
+        {
+          "name": "3.1 Create Order (Triggers Kafka + Async)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+                  "var res = pm.response.json();",
+                  "if (res.id) pm.collectionVariables.set('orderId', res.id);",
+                  "pm.test('Order has items', () => pm.expect(res.items).to.be.an('array').with.length.greaterThan(0));",
+                  "console.log('🛒 Order created! id:', res.id, '| total:', res.totalAmount);",
+                  "console.log('Check logs for:');",
+                  "console.log('  1. REPEATABLE_READ isolation transaction');",
+                  "console.log('  2. Stock update SQL');",
+                  "console.log('  3. Kafka OrderPlaced event published async');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/orders",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"productId\": 4, \"quantity\": 1 },\n    { \"productId\": 5, \"quantity\": 2 }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "3.2 ✅ Get My Orders FIXED (No N+1) - Count SQL queries!",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "console.log('👀 Watch app logs carefully...');",
+                  "console.log('Expected: 1-2 SQL queries (JOIN FETCH)');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "console.log('✅ TOPIC: N+1 FIX - JOIN FETCH');",
+                  "console.log('SQL generated: SELECT o FROM Order o JOIN FETCH o.user JOIN FETCH o.items');",
+                  "console.log('Only 1 query! No matter how many orders.');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/orders/fixed"
+          }
+        },
+        {
+          "name": "3.3 ❌ Get My Orders N+1 PROBLEM - Compare query count!",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "console.log('👀 Watch app logs carefully...');",
+                  "console.log('Expected: 1 + N queries (N = number of unique users)!');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "console.log('❌ TOPIC: N+1 PROBLEM DEMONSTRATED!');",
+                  "console.log('1 query: SELECT * FROM orders');",
+                  "console.log('+ N queries: SELECT * FROM users WHERE id = ? (for each order!)');",
+                  "console.log('Compare with /fixed endpoint - much more SQL queries!');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/orders/nplusone"
+          }
+        },
+        {
+          "name": "3.4 Paginated Orders (JOIN FETCH + Page)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var res = pm.response.json();",
+                  "pm.test('Paginated response structure', () => {",
+                  "    pm.expect(res).to.have.all.keys('content','page','size','totalElements','totalPages','last');",
+                  "});",
+                  "console.log('📄 TOPIC: Pagination with EntityGraph');",
+                  "console.log('Total orders:', res.totalElements, '| Current page:', res.page);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/paginated?page=0&size=5",
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "5" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🧠 4. JVM Internals",
+      "description": "TOPIC: JVM Memory Model, GC, HashMap, ConcurrentHashMap, Threads",
+      "item": [
+        {
+          "name": "4.1 JVM Memory - Heap + Metaspace + Pools",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var res = pm.response.json();",
+                  "pm.test('Has heap info', () => pm.expect(res).to.have.property('heap'));",
+                  "pm.test('Has memoryPools', () => pm.expect(res).to.have.property('memoryPools'));",
+                  "console.log('🧠 JVM Memory:');",
+                  "console.log('  Heap Used:', res.heap.used, '/', res.heap.max);",
+                  "console.log('  Heap Usage:', res.heap.usedPercent);",
+                  "console.log('  Metaspace:', res.nonHeap_metaspace?.used);",
+                  "res.memoryPools.forEach(p => console.log(' Pool:', p.name, '-', p.used));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/internals/jvm"
+          }
+        },
+        {
+          "name": "4.2 GC Stats - Garbage Collection Info",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var res = pm.response.json();",
+                  "console.log('🗑️ GC Collectors:');",
+                  "res.gcCollectors.forEach(gc => {",
+                  "    console.log(' ', gc.name, '→ count:', gc.collectionCount, '| time:', gc.collectionTimeMs + 'ms');",
+                  "});",
+                  "console.log('🧵 Threads:', res.threads.liveThreadCount, 'live |', res.threads.daemonThreadCount, 'daemon');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/internals/gc"
+          }
+        },
+        {
+          "name": "4.3 Thread Pool - Live Thread Info + Deadlock Detection",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var res = pm.response.json();",
+                  "pm.test('No deadlocks!', () => pm.expect(res.deadlockedThreads).to.eql(0));",
+                  "console.log('🧵 TOPIC: Threads Internals');",
+                  "console.log('Thread State Distribution:', JSON.stringify(res.threadStateDistribution));",
+                  "console.log('Total threads:', res.totalThreads);",
+                  "console.log('Deadlocked:', res.deadlockedThreads);",
+                  "console.log('Sample threads:', res.sampleThreads?.slice(0,5));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/internals/threads"
+          }
+        },
+        {
+          "name": "4.4 HashMap Internals - Collision, Resize, Tree",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var res = pm.response.json();",
+                  "console.log('🗺️ TOPIC: HashMap Internal');",
+                  "console.log('Collision example:', JSON.stringify(res.collision_example));",
+                  "console.log('Internal structure:', JSON.stringify(res.internal_structure));",
+                  "console.log('Time complexity:', JSON.stringify(res.time_complexity));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/internals/hashmap"
+          }
+        },
+        {
+          "name": "4.5 ConcurrentHashMap - Thread-Safe Operations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var res = pm.response.json();",
+                  "console.log('🔒 TOPIC: ConcurrentHashMap');",
+                  "console.log('Map contents:', JSON.stringify(res.mapContents));",
+                  "console.log('Concepts:', JSON.stringify(res.concepts, null, 2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/internals/concurrent-hashmap"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏗️ 5. Architecture Concepts",
+      "description": "TOPIC: API Gateway, Microservices, Load Balancer, Rate Limiting, Caching Patterns",
+      "item": [
+        {
+          "name": "5.1 Full Architecture Reference",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var res = pm.response.json();",
+                  "console.log('🏗️ Architecture Topics Covered:');",
+                  "console.log('  Load Balancer types:', res.loadBalancer?.types);",
+                  "console.log('  API Gateway responsibilities:', res.apiGateway?.responsibilities?.slice(0,3));",
+                  "console.log('  Microservices patterns:', res.microservices?.patterns?.slice(0,3));",
+                  "console.log('  Caching strategies:', Object.keys(res.caching_strategies));",
+                  "console.log('  Rate Limiting:', res.rateLimiting?.implemented);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/internals/architecture"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🚦 6. Rate Limiting Test",
+      "description": "TOPIC: Rate Limiting - Fixed Window with Redis",
+      "item": [
+        {
+          "name": "6.1 Rate Limit - Single Request (200 OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 or 201', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "console.log('✅ Request allowed. Rate limit counter incremented in Redis.');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"rahul@test.com\",\n  \"password\": \"rahul123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "6.2 Rate Limit - Spam Test (Run this 20+ times fast → 429)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "console.log('Response status:', pm.response.code);",
+                  "if (pm.response.code === 429) {",
+                  "    console.log('🚦 RATE LIMIT HIT! 429 Too Many Requests');",
+                  "    console.log('TOPIC: Fixed Window Rate Limiting with Redis');",
+                  "    pm.test('Rate limit triggered', () => pm.response.to.have.status(429));",
+                  "} else {",
+                  "    pm.test('Request allowed', () => pm.expect(pm.response.code).to.be.oneOf([200, 201, 400, 401]));",
+                  "    console.log('Still within limit. Keep spamming to trigger 429!');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"fake@test.com\",\n  \"password\": \"wrongpass\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 7. Actuator - Monitoring",
+      "description": "Spring Boot Actuator endpoints",
+      "item": [
+        {
+          "name": "7.1 Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var res = pm.response.json();",
+                  "pm.test('App is UP', () => pm.expect(res.status).to.eql('UP'));",
+                  "pm.test('DB is UP', () => pm.expect(res.components.db.status).to.eql('UP'));",
+                  "pm.test('Redis is UP', () => pm.expect(res.components.redis.status).to.eql('UP'));",
+                  "console.log('✅ Health:', res.status);",
+                  "console.log('  DB:', res.components.db.status, '-', res.components.db.details.database);",
+                  "console.log('  Redis:', res.components.redis.status, '- v' + res.components.redis.details.version);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/actuator/health"
+          }
+        },
+        {
+          "name": "7.2 Metrics Overview",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var res = pm.response.json();",
+                  "console.log('📊 Available metrics count:', res.names?.length);",
+                  "var hikariMetrics = res.names?.filter(n => n.includes('hikari'));",
+                  "console.log('HikariCP metrics:', hikariMetrics);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/actuator/metrics"
+          }
+        },
+        {
+          "name": "7.3 HikariCP Connection Pool Stats (JDBC Pool Topic)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var res = pm.response.json();",
+                  "console.log('🏊 TOPIC: JDBC + Connection Pool (HikariCP)');",
+                  "console.log('Active connections:', res.measurements?.[0]?.value);",
+                  "console.log('Max pool size: 10 (configured in application.yml)');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/actuator/metrics/hikaricp.connections.active"
+          }
+        },
+        {
+          "name": "7.4 JVM Heap Memory Metric",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var res = pm.response.json();",
+                  "var used = res.measurements?.find(m => m.statistic === 'VALUE')?.value;",
+                  "console.log('🧠 JVM Heap used:', Math.round(used/1024/1024) + ' MB');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/actuator/metrics/jvm.memory.used?tag=area:heap"
+          }
+        },
+        {
+          "name": "7.5 GC Pause Metric",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/actuator/metrics/jvm.gc.pause"
+          }
+        },
+        {
+          "name": "7.6 Thread Count Metric",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/actuator/metrics/jvm.threads.live"
+          }
+        },
+        {
+          "name": "7.7 Cache Stats",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "console.log('📦 TOPIC: Redis Cache - Cache names:');",
+                  "console.log(JSON.stringify(pm.response.json(), null, 2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/actuator/caches"
+          }
+        },
+        {
+          "name": "7.8 Thread Dump (All threads!)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var res = pm.response.json();",
+                  "console.log('🧵 TOPIC: Thread Pool Internals');",
+                  "console.log('Total threads in dump:', res.threads?.length);",
+                  "var ourThreads = res.threads?.filter(t => t.threadName?.includes('TechLearner'));",
+                  "console.log('TechLearner-Async threads:', ourThreads?.length);",
+                  "console.log('Our thread names:', ourThreads?.map(t => t.threadName));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/actuator/threaddump"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔬 8. Advanced Scenarios",
+      "description": "Edge cases and advanced testing",
+      "item": [
+        {
+          "name": "8.1 Delete Product (Cache Evict Test)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204 No Content', () => pm.response.to.have.status(204));",
+                  "console.log('🗑️ TOPIC: @CacheEvict - product cache cleared!');",
+                  "console.log('Next GET /api/products will be a cache MISS (DB query)');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/products/{{newProductId}}"
+          }
+        },
+        {
+          "name": "8.2 Get Deleted Product (404 / Cache Miss)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 (Product not found)', () => pm.response.to.have.status(400));",
+                  "console.log('✅ Cache properly evicted. DB query happened, product not found.');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/products/{{newProductId}}"
+          }
+        },
+        {
+          "name": "8.3 Order with Insufficient Stock (Transaction Rollback)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 (Insufficient stock)', () => pm.response.to.have.status(400));",
+                  "console.log('🔄 TOPIC: @Transactional Rollback');",
+                  "console.log('Exception thrown → entire transaction rolled back');",
+                  "console.log('No partial stock updates! ACID guaranteed.');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/orders",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"productId\": 1, \"quantity\": 99999 }\n  ]\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
