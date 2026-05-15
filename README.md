@@ -482,162 +482,68 @@ WHERE category='ELECTRONICS';
 techlearner/
 ├── docker-compose.yml
 ├── pom.xml
-└── src/main/
-    ├── resources/
-    │   ├── application.yml
-    │   ├── data.sql
-    │   └── logback-spring.xml
-    │
-    └── java/com/techlearner/
-        │
-        ├── TechLearnerApplication.java
-        │
-        ├── aop/
-        │   ├── LoggingAspect.java
-        │   ├── RateLimitingAspect.java
-        │   └── RateLimit.java
-        │
-        ├── config/
-        │   ├── AsyncConfig.java
-        │   ├── RedisConfig.java
-        │   ├── KafkaConfig.java
-        │   ├── SecurityConfig.java
-        │   ├── SwaggerConfig.java
-        │   ├── OpenApiConfig.java
-        │   ├── ModelMapperConfig.java
-        │   ├── CorsConfig.java
-        │   ├── CacheConfig.java
-        │   ├── AppConfig.java
-        │   └── GlobalExceptionHandler.java
-        │
-        ├── controller/
-        │   ├── AuthController.java
-        │   ├── ProductController.java
-        │   ├── OrderController.java
-        │   ├── UserController.java
-        │   ├── AdminController.java
-        │   ├── CacheController.java
-        │   ├── KafkaController.java
-        │   ├── HealthController.java
-        │   └── InternalController.java
-        │
-        ├── dto/
-        │   ├── AuthRequest.java
-        │   ├── AuthResponse.java
-        │   ├── RegisterRequest.java
-        │   ├── ProductRequest.java
-        │   ├── ProductResponse.java
-        │   ├── OrderRequest.java
-        │   ├── OrderResponse.java
-        │   ├── UserResponse.java
-        │   ├── PaginationResponse.java
-        │   ├── ErrorResponse.java
-        │   └── ApiResponse.java
-        │
-        ├── entity/
-        │   ├── User.java
-        │   ├── Role.java
-        │   ├── Product.java
-        │   ├── Order.java
-        │   ├── OrderItem.java
-        │   ├── Category.java
-        │   ├── RefreshToken.java
-        │   ├── AuditLog.java
-        │   └── BaseEntity.java
-        │
-        ├── enums/
-        │   ├── RoleType.java
-        │   ├── OrderStatus.java
-        │   ├── ProductCategory.java
-        │   └── PaymentStatus.java
-        │
-        ├── exception/
-        │   ├── ResourceNotFoundException.java
-        │   ├── UnauthorizedException.java
-        │   ├── BadRequestException.java
-        │   ├── ValidationException.java
-        │   └── RateLimitExceededException.java
-        │
-        ├── kafka/
-        │   ├── KafkaConfig.java
-        │   ├── EventProducer.java
-        │   ├── EventConsumer.java
-        │   ├── ProductCreatedEvent.java
-        │   ├── OrderCreatedEvent.java
-        │   └── KafkaTopics.java
-        │
-        ├── repository/
-        │   ├── UserRepository.java
-        │   ├── ProductRepository.java
-        │   ├── OrderRepository.java
-        │   ├── OrderItemRepository.java
-        │   ├── RoleRepository.java
-        │   ├── RefreshTokenRepository.java
-        │   └── AuditLogRepository.java
-        │
-        ├── security/
-        │   ├── JwtUtils.java
-        │   ├── JwtAuthFilter.java
-        │   ├── JwtAuthenticationEntryPoint.java
-        │   ├── JwtAccessDeniedHandler.java
-        │   ├── UserDetailsImpl.java
-        │   ├── UserDetailsServiceImpl.java
-        │   ├── SecurityConstants.java
-        │   └── CustomAuthenticationProvider.java
-        │
-        ├── service/
-        │   ├── AuthService.java
-        │   ├── ProductService.java
-        │   ├── OrderService.java
-        │   ├── UserService.java
-        │   ├── CacheService.java
-        │   ├── KafkaService.java
-        │   ├── EmailService.java
-        │   ├── NotificationService.java
-        │   ├── AuditService.java
-        │   ├── JvmInternalsService.java
-        │   └── AnalyticsService.java
-        │
-        ├── service/impl/
-        │   ├── AuthServiceImpl.java
-        │   ├── ProductServiceImpl.java
-        │   ├── OrderServiceImpl.java
-        │   ├── UserServiceImpl.java
-        │   └── NotificationServiceImpl.java
-        │
-        ├── util/
-        │   ├── JwtUtil.java
-        │   ├── DateUtil.java
-        │   ├── PaginationUtil.java
-        │   ├── ValidationUtil.java
-        │   ├── CacheKeyUtil.java
-        │   └── AppConstants.java
-        │
-        ├── validator/
-        │   ├── PasswordValidator.java
-        │   ├── ProductValidator.java
-        │   ├── OrderValidator.java
-        │   └── UserValidator.java
-        │
-        ├── scheduler/
-        │   ├── CacheCleanupScheduler.java
-        │   ├── TokenCleanupScheduler.java
-        │   └── AnalyticsScheduler.java
-        │
-        └── internals/
-            ├── jvm/
-            │   ├── HeapMemoryAnalyzer.java
-            │   ├── GCAnalyzer.java
-            │   └── ThreadAnalyzer.java
-            │
-            ├── hashmap/
-            │   ├── HashMapInternals.java
-            │   └── ConcurrentHashMapInternals.java
-            │
-            └── database/
-                ├── QueryAnalyzer.java
-                ├── IndexAnalyzer.java
-                └── TransactionAnalyzer.java
+├── README.md
+├── TechLearner_Postman_Collection.json
+│
+├── src/main/
+│   ├── java/com.techlearner/
+│   │
+│   │   ├── aop/
+│   │   │   ├── LoggingAspect.java
+│   │   │   ├── RateLimit.java
+│   │   │   └── RateLimitingAspect.java
+│   │   │
+│   │   ├── config/
+│   │   │   ├── AsyncConfig.java
+│   │   │   ├── DataInitializer.java
+│   │   │   ├── GlobalExceptionHandler.java
+│   │   │   ├── RedisConfig.java
+│   │   │   └── SecurityConfig.java
+│   │   │
+│   │   ├── controller/
+│   │   │   ├── AuthController.java
+│   │   │   ├── JvmController.java
+│   │   │   ├── OrderController.java
+│   │   │   └── ProductController.java
+│   │   │
+│   │   ├── dto/
+│   │   │   └── Dtos.java
+│   │   │
+│   │   ├── entity/
+│   │   │   ├── Order.java
+│   │   │   ├── OrderItem.java
+│   │   │   ├── Product.java
+│   │   │   └── User.java
+│   │   │
+│   │   ├── kafka/
+│   │   │   ├── EventProducer.java
+│   │   │   ├── KafkaConfig.java
+│   │   │   ├── KafkaConsumer.java
+│   │   │   ├── OrderPlacedEvent.java
+│   │   │   └── ProductCreatedEvent.java
+│   │   │
+│   │   ├── repository/
+│   │   │   ├── OrderRepository.java
+│   │   │   ├── ProductRepository.java
+│   │   │   └── UserRepository.java
+│   │   │
+│   │   ├── security/
+│   │   │   ├── JwtAuthFilter.java
+│   │   │   ├── JwtUtils.java
+│   │   │   └── UserDetailsServiceImpl.java
+│   │   │
+│   │   ├── service/
+│   │   │   ├── AuthService.java
+│   │   │   ├── JvmInternalsService.java
+│   │   │   ├── OrderService.java
+│   │   │   └── ProductService.java
+│   │   │
+│   │   └── TechLearnerApplication.java
+│   │
+│   └── resources/
+│       └── application.yml
+│
+└── target/
 ```
 
 ---
