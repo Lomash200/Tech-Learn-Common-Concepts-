@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TechLearner API Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0f;--surface:#111118;--surface2:#1a1a25;--border:#252535;--accent:#00ff88;--accent2:#7c3aed;--accent3:#f59e0b;--red:#ff4444;--text:#e8e8f0;--muted:#6b6b8a;--font-mono:'JetBrains Mono',monospace;--font-display:'Syne',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font-mono);font-size:13px;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,255,136,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.app{display:flex;height:100vh;position:relative;z-index:1}
+.sidebar{width:260px;min-width:260px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.logo{padding:20px 18px 16px;border-bottom:1px solid var(--border)}
+.logo-title{font-family:var(--font-display);font-size:18px;font-weight:800;color:var(--accent);letter-spacing:-.5px}
+.logo-sub{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+.base-url-box{margin:12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 10px}
+.base-url-label{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:4px}
+.base-url-input{width:100%;background:transparent;border:none;color:var(--accent);font-family:var(--font-mono);font-size:11px;outline:none}
+.token-badge{margin:0 12px 10px;padding:6px 10px;border-radius:5px;font-size:10px;display:flex;align-items:center;gap:6px;border:1px solid transparent}
+.token-badge.no-token{background:rgba(255,68,68,.08);border-color:rgba(255,68,68,.2);color:var(--red)}
+.token-badge.has-token{background:rgba(0,255,136,.08);border-color:rgba(0,255,136,.2);color:var(--accent)}
+.token-badge .dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.dot.pulse{animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.nav{flex:1;overflow-y:auto;padding:6px 0}
+.nav::-webkit-scrollbar{width:3px}
+.nav::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.nav-section{margin-bottom:4px}
+.nav-section-title{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);padding:10px 18px 4px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 18px;cursor:pointer;transition:background .15s;border-left:2px solid transparent}
+.nav-item:hover{background:var(--surface2)}
+.nav-item.active{background:rgba(0,255,136,.06);border-left-color:var(--accent);color:var(--accent)}
+.method-tag{font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;min-width:34px;text-align:center;letter-spacing:.5px}
+.get{background:rgba(0,255,136,.15);color:var(--accent)}
+.post{background:rgba(124,58,237,.2);color:#a78bfa}
+.put{background:rgba(245,158,11,.15);color:var(--accent3)}
+.delete{background:rgba(255,68,68,.15);color:var(--red)}
+.nav-label{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--surface)}
+.method-select{background:var(--surface2);border:1px solid var(--border);color:var(--accent);font-family:var(--font-mono);font-size:12px;font-weight:700;padding:8px 10px;border-radius:6px;cursor:pointer;outline:none;min-width:80px}
+.url-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 14px;color:var(--text);font-family:var(--font-mono);font-size:12px;outline:none;transition:border-color .2s}
+.url-input:focus{border-color:var(--accent)}
+.send-btn{background:var(--accent);color:#000;border:none;border-radius:6px;padding:8px 20px;font-family:var(--font-mono);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.5px;white-space:nowrap}
+.send-btn:hover{background:#00cc6e;transform:translateY(-1px)}
+.send-btn:active{transform:translateY(0)}
+.send-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.panels{flex:1;display:grid;grid-template-columns:1fr 1fr;overflow:hidden}
+.panel{display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border)}
+.panel:last-child{border-right:none}
+.panel-header{padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.panel-title{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--muted)}
+.tabs{display:flex;gap:0}
+.tab{padding:4px 10px;font-size:10px;cursor:pointer;border:1px solid var(--border);border-radius:4px 0 0 4px;color:var(--muted);background:transparent;transition:all .15s}
+.tab:last-child{border-radius:0 4px 4px 0;border-left:none}
+.tab.active{background:var(--surface2);color:var(--accent);border-color:var(--accent)}
+.panel-content{flex:1;overflow:hidden;position:relative}
+textarea.body-input{width:100%;height:100%;background:transparent;border:none;color:#c9d1d9;font-family:var(--font-mono);font-size:12px;padding:14px 16px;resize:none;outline:none;line-height:1.6}
+.headers-table{padding:10px;overflow-y:auto;height:100%}
+.header-row{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin-bottom:6px;align-items:center}
+.header-input{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:5px 8px;color:var(--text);font-family:var(--font-mono);font-size:11px;outline:none;width:100%}
+.header-input:focus{border-color:var(--accent)}
+.add-header-btn{margin:6px 0;background:transparent;border:1px dashed var(--border);border-radius:4px;color:var(--muted);font-family:var(--font-mono);font-size:11px;padding:5px 10px;cursor:pointer;width:100%;text-align:left;transition:all .15s}
+.add-header-btn:hover{border-color:var(--accent);color:var(--accent)}
+.del-btn{background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--red);cursor:pointer;padding:3px 6px;font-size:10px;line-height:1}
+.response-meta{display:flex;align-items:center;gap:12px}
+.status-badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px}
+.status-2xx{background:rgba(0,255,136,.15);color:var(--accent)}
+.status-4xx{background:rgba(255,68,68,.15);color:var(--red)}
+.status-5xx{background:rgba(245,158,11,.15);color:var(--accent3)}
+.time-badge{font-size:10px;color:var(--muted)}
+.response-body{flex:1;overflow-y:auto;padding:14px 16px;font-family:var(--font-mono);font-size:12px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.response-body::-webkit-scrollbar{width:4px}
+.response-body::-webkit-scrollbar-thumb{background:var(--border)}
+.json-key{color:#79c0ff}
+.json-str{color:#a5d6ff}
+.json-num{color:#ffa657}
+.json-bool{color:#ff7b72}
+.json-null{color:var(--muted)}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--muted);gap:8px;font-size:12px}
+.empty-state .icon{font-size:32px;opacity:.4}
+.loading-bar{position:absolute;top:0;left:0;height:2px;background:var(--accent);width:0;box-shadow:0 0 8px var(--accent)}
+@keyframes loading{0%{width:0;left:0}50%{width:70%}100%{width:100%;left:100%}}
+.statusbar{padding:5px 16px;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;gap:16px;font-size:10px;color:var(--muted)}
+.statusbar .sep{opacity:.3}
+.toast{position:fixed;bottom:40px;right:20px;background:var(--surface2);border:1px solid var(--accent);color:var(--accent);padding:10px 16px;border-radius:6px;font-size:12px;z-index:999;transform:translateY(20px);opacity:0;transition:all .25s;box-shadow:0 4px 20px rgba(0,255,136,.15)}
+.toast.show{transform:translateY(0);opacity:1}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px;width:360px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.modal h3{font-family:var(--font-display);font-size:16px;margin-bottom:16px;color:var(--accent)}
+.modal label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);display:block;margin-bottom:5px}
+.modal input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:8px 12px;color:var(--text);font-family:var(--font-mono);font-size:12px;outline:none;margin-bottom:12px}
+.modal input:focus{border-color:var(--accent)}
+.modal-btns{display:flex;gap:8px;margin-top:4px}
+.modal-btn{flex:1;padding:8px;border-radius:5px;border:none;font-family:var(--font-mono);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.modal-btn.primary{background:var(--accent);color:#000}
+.modal-btn.primary:hover{background:#00cc6e}
+.modal-btn.secondary{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+.modal-btn.secondary:hover{color:var(--text)}
+.shortcut-hint{font-size:9px;color:var(--muted);padding:2px 5px;border:1px solid var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-title">TechLearner</div>
+      <div class="logo-sub">API Explorer v1.0</div>
+    </div>
+    <div class="base-url-box">
+      <div class="base-url-label">Base URL</div>
+      <input class="base-url-input" id="baseUrl" value="http://localhost:8080"/>
+    </div>
+    <div class="token-badge no-token" id="tokenBadge">
+      <span class="dot pulse"></span>
+      <span id="tokenLabel">No JWT Token</span>
+    </div>
+    <nav class="nav" id="nav"></nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <select class="method-select" id="methodSelect" onchange="updateMethodColor()">
+        <option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option>
+      </select>
+      <input class="url-input" id="urlInput" placeholder="/api/..."/>
+      <button class="send-btn" id="sendBtn" onclick="sendRequest()">&#9654; SEND</button>
+      <button class="send-btn" style="background:var(--surface2);color:var(--accent);border:1px solid var(--accent)" onclick="openAuthModal()">&#9889; Login</button>
+      <span class="shortcut-hint">Ctrl+Enter</span>
+    </div>
+
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Request</span>
+          <div class="tabs">
+            <div class="tab active" onclick="switchTab('body',this)">Body</div>
+            <div class="tab" onclick="switchTab('hdrs',this)">Headers</div>
+          </div>
+        </div>
+        <div class="panel-content">
+          <div id="tab-body">
+            <textarea class="body-input" id="reqBody" placeholder='// JSON body&#10;{&#10;  "key": "value"&#10;}'></textarea>
+          </div>
+          <div id="tab-hdrs" style="display:none" class="headers-table">
+            <div id="headersContainer"></div>
+            <button class="add-header-btn" onclick="addHeaderRow()">+ Add Header</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Response</span>
+          <div class="response-meta" id="responseMeta"></div>
+        </div>
+        <div class="panel-content" style="display:flex;flex-direction:column">
+          <div class="loading-bar" id="loadingBar"></div>
+          <div class="response-body" id="responseBody">
+            <div class="empty-state">
+              <div class="icon">&#9672;</div>
+              <div>Select an endpoint &amp; click SEND</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="statusbar">
+      <span id="statusText">Ready · Ctrl+Enter to send</span>
+      <span class="sep">|</span>
+      <span id="topicText" style="color:#a78bfa">Select an endpoint from sidebar</span>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="authModal">
+  <div class="modal">
+    <h3>&#9889; Quick Login</h3>
+    <label>Email</label>
+    <input type="email" id="authEmail" value="admin@techlearner.com"/>
+    <label>Password</label>
+    <input type="password" id="authPassword" value="admin123"/>
+    <div class="modal-btns">
+      <button class="modal-btn primary" onclick="doLogin()">Login &amp; Save Token</button>
+      <button class="modal-btn secondary" onclick="closeAuthModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var jwtToken='';
+var activeItem=null;
+var headers=[{key:'Content-Type',value:'application/json'}];
+
+var routes=[
+  {section:'🔐 Auth — JWT Flow',items:[
+    {label:'Register User',method:'POST',path:'/api/auth/register',topic:'IOC + Spring Security + JWT',body:'{\n  "username": "testuser",\n  "email": "test@techlearner.com",\n  "password": "test1234"\n}'},
+    {label:'Login (User)',method:'POST',path:'/api/auth/login',topic:'JWT Token Generation + BCrypt',body:'{\n  "email": "rahul@test.com",\n  "password": "rahul123"\n}',saveToken:true},
+    {label:'Login (Admin)',method:'POST',path:'/api/auth/login',topic:'JWT Token Generation + Role',body:'{\n  "email": "admin@techlearner.com",\n  "password": "admin123"\n}',saveToken:true},
+    {label:'Wrong Password (401)',method:'POST',path:'/api/auth/login',topic:'Spring Security Auth Failure',body:'{\n  "email": "rahul@test.com",\n  "password": "WRONGPASS"\n}'}
+  ]},
+  {section:'📦 Products — Cache + Pagination',items:[
+    {label:'Get All — Page 1 (DB)',method:'GET',path:'/api/products?page=0&size=5&sortBy=price',topic:'Offset Pagination + @Cacheable — 1st call hits DB',auth:true},
+    {label:'Get All — Page 1 (Cache ⚡)',method:'GET',path:'/api/products?page=0&size=5&sortBy=price',topic:'@Cacheable — 2nd call served from Redis!',auth:true},
+    {label:'Get All — Page 2',method:'GET',path:'/api/products?page=1&size=5&sortBy=price',topic:'Different cache key for different page',auth:true},
+    {label:'Get Product by ID',method:'GET',path:'/api/products/1',topic:'@Cacheable single item lookup',auth:true},
+    {label:'Cursor Pagination ⚡',method:'GET',path:'/api/products/cursor?lastId=0&size=5',topic:'Keyset Pagination — faster than OFFSET for large data',auth:true},
+    {label:'Filter by Category (Streams)',method:'GET',path:'/api/products/category/ELECTRONICS',topic:'Java Streams: .filter().sorted().map().collect()',auth:true},
+    {label:'Create Product (Admin)',method:'POST',path:'/api/products',topic:'@Transactional + @CacheEvict + Kafka Async Event',auth:true,body:'{\n  "name": "iPhone 16 Pro",\n  "description": "Titanium, A18 chip",\n  "price": 134900,\n  "category": "ELECTRONICS",\n  "stock": 25\n}'},
+    {label:'Update Product (Admin)',method:'PUT',path:'/api/products/2',topic:'@CachePut + Hibernate Dirty Checking',auth:true,body:'{\n  "name": "Samsung Galaxy S24 Ultra",\n  "description": "Updated model",\n  "price": 89999,\n  "category": "ELECTRONICS",\n  "stock": 15\n}'},
+    {label:'Delete Product (Admin)',method:'DELETE',path:'/api/products/2',topic:'@CacheEvict + @Transactional Rollback',auth:true},
+    {label:'Create as USER — 403 Forbidden',method:'POST',path:'/api/products',topic:'@PreAuthorize("hasRole(ADMIN)") — AOP method security',auth:true,body:'{\n  "name": "Hack", "price": 1, "category": "X", "stock": 0\n}'}
+  ]},
+  {section:'🛒 Orders — N+1 Problem',items:[
+    {label:'✅ Get Orders FIXED',method:'GET',path:'/api/orders/fixed',topic:'N+1 Fix: JOIN FETCH = 1 SQL query. Watch logs!',auth:true},
+    {label:'❌ Get Orders N+1 PROBLEM',method:'GET',path:'/api/orders/nplusone',topic:'N+1 Problem: 1 + N SQL queries. Watch logs!',auth:true},
+    {label:'Paginated Orders',method:'GET',path:'/api/orders/paginated?page=0&size=5',topic:'Pagination + @EntityGraph to avoid N+1',auth:true},
+    {label:'Create Order',method:'POST',path:'/api/orders',topic:'REPEATABLE_READ Isolation + Kafka + @Async',auth:true,body:'{\n  "items": [\n    { "productId": 4, "quantity": 1 },\n    { "productId": 5, "quantity": 2 }\n  ]\n}'},
+    {label:'Insufficient Stock — Rollback',method:'POST',path:'/api/orders',topic:'@Transactional Rollback: ACID Atomicity demo',auth:true,body:'{\n  "items": [\n    { "productId": 1, "quantity": 999999 }\n  ]\n}'}
+  ]},
+  {section:'🧠 JVM Internals',items:[
+    {label:'JVM Memory (Live)',method:'GET',path:'/api/internals/jvm',topic:'JVM Memory Model: Heap + Metaspace + Memory Pools'},
+    {label:'GC Statistics',method:'GET',path:'/api/internals/gc',topic:'Garbage Collection: Minor GC, Major GC, Full GC'},
+    {label:'Thread Pool Info',method:'GET',path:'/api/internals/threads',topic:'Threads: States + Deadlock Detection'},
+    {label:'HashMap Internals',method:'GET',path:'/api/internals/hashmap',topic:'HashMap: Bucket, Collision, Treeify, Resize'},
+    {label:'ConcurrentHashMap',method:'GET',path:'/api/internals/concurrent-hashmap',topic:'ConcurrentHashMap: CAS, Bucket-level lock, volatile'},
+    {label:'Architecture Reference',method:'GET',path:'/api/internals/architecture',topic:'Load Balancer, API Gateway, Microservices, Rate Limiting'}
+  ]},
+  {section:'📊 Actuator — Monitoring',items:[
+    {label:'Health Check',method:'GET',path:'/actuator/health',topic:'DB + Redis + DiskSpace Health'},
+    {label:'All Metrics',method:'GET',path:'/actuator/metrics',topic:'JVM + HikariCP + HTTP Metrics list'},
+    {label:'HikariCP Active Connections',method:'GET',path:'/actuator/metrics/hikaricp.connections.active',topic:'JDBC Connection Pool — live connection count'},
+    {label:'JVM Heap Used',method:'GET',path:'/actuator/metrics/jvm.memory.used?tag=area:heap',topic:'JVM Memory Model — live heap usage'},
+    {label:'GC Pause Time',method:'GET',path:'/actuator/metrics/jvm.gc.pause',topic:'GC Pause duration metric'},
+    {label:'Live Thread Count',method:'GET',path:'/actuator/metrics/jvm.threads.live',topic:'Thread Pool — live thread count'},
+    {label:'Cache Names (Redis)',method:'GET',path:'/actuator/caches',topic:'Redis Cache Manager — registered caches'},
+    {label:'Thread Dump',method:'GET',path:'/actuator/threaddump',topic:'All thread states + stack traces'}
+  ]}
+];
+
+function buildNav(){
+  var nav=document.getElementById('nav');
+  routes.forEach(function(section){
+    var sec=document.createElement('div');
+    sec.className='nav-section';
+    var title=document.createElement('div');
+    title.className='nav-section-title';
+    title.textContent=section.section;
+    sec.appendChild(title);
+    section.items.forEach(function(item){
+      var el=document.createElement('div');
+      el.className='nav-item';
+      el.innerHTML='<span class="method-tag '+item.method.toLowerCase()+'">'+item.method+'</span><span class="nav-label" title="'+item.label+'">'+item.label+'</span>';
+      el.onclick=function(){loadRoute(item,el)};
+      sec.appendChild(el);
+    });
+    nav.appendChild(sec);
+  });
+}
+
+function loadRoute(item,el){
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active')});
+  el.classList.add('active');
+  activeItem=item;
+  document.getElementById('methodSelect').value=item.method;
+  updateMethodColor();
+  var base=document.getElementById('baseUrl').value.replace(/\/$/,'');
+  document.getElementById('urlInput').value=base+item.path;
+  document.getElementById('reqBody').value=item.body||'';
+  if(item.auth&&jwtToken) setAuthHeader();
+  document.getElementById('topicText').textContent='📚 TOPIC: '+item.topic;
+  document.getElementById('responseBody').innerHTML='<div class="empty-state"><div class="icon">&#9654;</div><div>Click SEND to execute</div><div style="font-size:10px;color:#6b6b8a;margin-top:6px">'+item.topic+'</div></div>';
+  document.getElementById('responseMeta').innerHTML='';
+}
+
+function updateMethodColor(){
+  var sel=document.getElementById('methodSelect');
+  var colors={GET:'#00ff88',POST:'#a78bfa',PUT:'#f59e0b',DELETE:'#ff4444'};
+  sel.style.color=colors[sel.value]||'#e8e8f0';
+}
+
+async function sendRequest(){
+  var method=document.getElementById('methodSelect').value;
+  var url=document.getElementById('urlInput').value.trim();
+  var bodyText=document.getElementById('reqBody').value.trim();
+  if(!url){showToast('Enter a URL!');return}
+  var btn=document.getElementById('sendBtn');
+  btn.disabled=true;btn.textContent='⏳ Sending...';
+  var lb=document.getElementById('loadingBar');
+  lb.style.animation='loading 1.2s ease-in-out infinite';
+  lb.style.width='70%';
+  document.getElementById('statusText').textContent=method+' '+url;
+  var t0=Date.now();
+  var reqHeaders={'Content-Type':'application/json'};
+  if(jwtToken) reqHeaders['Authorization']='Bearer '+jwtToken;
+  headers.forEach(function(h){if(h.key&&h.value) reqHeaders[h.key]=h.value});
+  try{
+    var opts={method:method,headers:reqHeaders};
+    if(method!=='GET'&&method!=='DELETE'&&bodyText) opts.body=bodyText;
+    var res=await fetch(url,opts);
+    var elapsed=Date.now()-t0;
+    var text=await res.text();
+    if(activeItem&&activeItem.saveToken){
+      try{var d=JSON.parse(text);if(d.token){jwtToken=d.token;updateTokenBadge();setAuthHeader();showToast('✅ JWT Token saved! You are: '+d.username+' ('+d.role+')')}}catch(e){}
+    }
+    renderResponse(res.status,text,elapsed);
+  }catch(err){
+    renderError(err.message);
+  }finally{
+    lb.style.animation='';lb.style.width='0';
+    btn.disabled=false;btn.textContent='▶ SEND';
+  }
+}
+
+function renderResponse(status,text,elapsed){
+  var cls=status>=500?'status-5xx':status>=400?'status-4xx':'status-2xx';
+  document.getElementById('responseMeta').innerHTML='<span class="status-badge '+cls+'">'+status+'</span><span class="time-badge">'+elapsed+'ms</span>';
+  try{
+    var parsed=JSON.parse(text);
+    document.getElementById('responseBody').innerHTML=syntaxHighlight(JSON.stringify(parsed,null,2));
+  }catch(e){
+    document.getElementById('responseBody').textContent=text;
+  }
+  document.getElementById('statusText').textContent='HTTP '+status+' · '+elapsed+'ms';
+}
+
+function renderError(msg){
+  document.getElementById('responseBody').innerHTML='<div style="color:var(--red);padding:10px">&#10005; Connection Error<br><br><span style="color:var(--muted)">'+msg+'</span><br><br><span style="color:var(--muted);font-size:11px">Make sure Spring Boot is running at '+document.getElementById('baseUrl').value+'</span></div>';
+  document.getElementById('responseMeta').innerHTML='<span class="status-badge status-4xx">ERR</span>';
+  document.getElementById('statusText').textContent='Connection failed';
+}
+
+function syntaxHighlight(json){
+  return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,function(match){
+    var cls='json-num';
+    if(/^"/.test(match)){cls=/:$/.test(match)?'json-key':'json-str';}
+    else if(/true|false/.test(match)){cls='json-bool';}
+    else if(/null/.test(match)){cls='json-null';}
+    return '<span class="'+cls+'">'+match+'</span>';
+  });
+}
+
+function switchTab(id,el){
+  document.getElementById('tab-body').style.display='none';
+  document.getElementById('tab-hdrs').style.display='none';
+  document.getElementById('tab-'+id).style.display='block';
+  el.closest('.tabs').querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
+  el.classList.add('active');
+}
+
+function renderHeaders(){
+  var c=document.getElementById('headersContainer');c.innerHTML='';
+  headers.forEach(function(h,i){
+    var row=document.createElement('div');row.className='header-row';
+    row.innerHTML='<input class="header-input" placeholder="Key" value="'+escHtml(h.key)+'" oninput="headers['+i+'].key=this.value"/><input class="header-input" placeholder="Value" value="'+escHtml(h.value)+'" oninput="headers['+i+'].value=this.value"/><button class="del-btn" onclick="removeHeader('+i+')">&#10005;</button>';
+    c.appendChild(row);
+  });
+}
+
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}
+function addHeaderRow(){headers.push({key:'',value:''});renderHeaders()}
+function removeHeader(i){headers.splice(i,1);renderHeaders()}
+function setAuthHeader(){
+  var idx=headers.findIndex(function(h){return h.key==='Authorization'});
+  if(idx>=0) headers[idx].value='Bearer '+jwtToken;
+  else headers.push({key:'Authorization',value:'Bearer '+jwtToken});
+  renderHeaders();
+}
+
+function updateTokenBadge(){
+  var badge=document.getElementById('tokenBadge');
+  if(jwtToken){
+    badge.className='token-badge has-token';
+    document.getElementById('tokenLabel').textContent='JWT Active';
+  }else{
+    badge.className='token-badge no-token';
+    document.getElementById('tokenLabel').textContent='No JWT Token';
+  }
+}
+
+function openAuthModal(){document.getElementById('authModal').classList.add('open')}
+function closeAuthModal(){document.getElementById('authModal').classList.remove('open')}
+
+async function doLogin(){
+  var email=document.getElementById('authEmail').value;
+  var pass=document.getElementById('authPassword').value;
+  var base=document.getElementById('baseUrl').value.replace(/\/$/,'');
+  try{
+    var res=await fetch(base+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pass})});
+    var d=await res.json();
+    if(d.token){jwtToken=d.token;updateTokenBadge();setAuthHeader();closeAuthModal();showToast('✅ Logged in as '+d.username+' ('+d.role+')');}
+    else showToast('Login failed: '+(d.message||'Check credentials'));
+  }catch(e){showToast('Cannot connect to server')}
+}
+
+function showToast(msg){
+  var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show')},3500);
+}
+
+document.addEventListener('keydown',function(e){
+  if((e.ctrlKey||e.metaKey)&&e.key==='Enter') sendRequest();
+  if(e.key==='Escape') closeAuthModal();
+});
+
+document.getElementById('baseUrl').addEventListener('change',function(){
+  var url=document.getElementById('urlInput').value;
+  var path=url.replace(/^https?:\/\/[^\/]+/,'');
+  document.getElementById('urlInput').value=this.value.replace(/\/$/,'')+path;
+});
+
+buildNav();
+renderHeaders();
+updateMethodColor();
+
+// Auto-select Admin Login
+var allItems=document.querySelectorAll('.nav-item');
+if(allItems[2]) loadRoute(routes[0].items[2],allItems[2]);
+</script>
+</body>
+</html>
